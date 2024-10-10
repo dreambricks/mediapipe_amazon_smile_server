@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video Stream with MediaPipe</title>
+</head>
+<body>
+    <h1>Protótipo Amazon Sorriso</h1>
+    <video id="video" autoplay playsinline style="display: none;"></video>
+    <canvas id="canvas" style="display: none;"></canvas>
+    <img id="processedVideo" alt="Processed Video Stream" />
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.0/socket.io.js"></script>
+    <script>
+        const video = document.getElementById('video');
+        const canvas = document.getElementById('canvas');
+        const context = canvas.getContext('2d');
+        const processedVideo = document.getElementById('processedVideo');
+        const socket = io.connect();
+
+        // Função para capturar a câmera do usuário
+        navigator.mediaDevices.getUserMedia({ video: true }).then(stream => {
+            video.srcObject = stream;
+        });
+
+        // Função para enviar os frames da câmera para o servidor
+        function sendFrameToServer() {
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+            const frameData = canvas.toDataURL('image/jpeg');
+            socket.emit('video_frame', frameData);
+        }
+
+        // Receber o frame processado do servidor e exibir
+        socket.on('processed_frame', function(data) {
+            processedVideo.src = data;
+        });
+
+        // Enviar frames continuamente para o servidor
+        setInterval(sendFrameToServer, 100); // Envia a cada 100ms (10fps)
+    </script>
+</body>
+</html>

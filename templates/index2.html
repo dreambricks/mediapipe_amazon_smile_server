@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Protótipo Amazon Sorriso</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.0/socket.io.js"></script>
+</head>
+<body>
+    <h1>Video Processado</h1>
+    <img id="video" autoplay></img>
+    <script>
+        const socket = io.connect('https://422f-2804-7f0-3d3-b05-d0fd-fb90-a546-3f18.ngrok-free.app ');
+        const pc = new RTCPeerConnection();
+
+        const video = document.getElementById('video');
+
+        // Defina a fonte da imagem para o stream processado
+        video.src = 'https://422f-2804-7f0-3d3-b05-d0fd-fb90-a546-3f18.ngrok-free.app /video_feed';
+
+        // Envia a oferta para o servidor
+        pc.createOffer()
+            .then(offer => {
+                return pc.setLocalDescription(offer);
+            })
+            .then(() => {
+                socket.emit('offer', { offer: pc.localDescription });
+            });
+
+        // Recebe a resposta do servidor
+        socket.on('answer', async (data) => {
+            await pc.setRemoteDescription(new RTCSessionDescription(data.answer));
+        });
+
+        // Recebe candidatos ICE
+        socket.on('icecandidate', candidate => {
+            pc.addIceCandidate(new RTCIceCandidate(candidate));
+        });
+    </script>
+</body>
+</html>
